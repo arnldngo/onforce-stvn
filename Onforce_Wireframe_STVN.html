@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onforce — Multiplayer AI Workspace</title>
+<style>
+  :root{
+    --bg:#FFFDFB; --grad-a:#FFF6EE; --grad-b:#FFFFFF;
+    --card:#FFFFFF; --ink:#1C1A17; --ink-soft:#6E6659; --ink-faint:#9C9488;
+    --border:#EFE6DA; --border-soft:#F5EFE6;
+    --accent:#CC785C; --accent-dark:#B35F44; --accent-soft:#FBEAE2; --accent-softer:#FDF3EE;
+    --verified:#3F8A5C; --verified-soft:#EAF6EE;
+    --warn:#C77C1E; --warn-soft:#FDF1DE;
+    --danger:#C0503F; --danger-soft:#FBEAE6;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:linear-gradient(180deg,var(--grad-a) 0%, var(--grad-b) 340px);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#E5DACB;border-radius:8px;}
+
+  /* ===== AUTH + ONBOARDING ===== */
+  #authView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .authstage{display:none;width:100%;}
+  .authstage.active{display:flex;justify-content:center;}
+  .authbox{width:100%;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px 32px;box-shadow:0 20px 60px rgba(204,120,92,0.08);}
+  .authmark{width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;margin:0 auto 16px;}
+  .authbox h1{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px;}
+  .authbox .sub{font-size:13px;color:var(--ink-soft);text-align:center;margin-bottom:22px;}
+  .authtabs{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:4px;margin-bottom:22px;}
+  .authtab{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
+  .authtab.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+  .fieldsm{margin-bottom:14px;}
+  .fieldsm label{display:block;font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;}
+  .fieldsm input{width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:13.5px;background:var(--bg);}
+  .authbtn{width:100%;padding:12px;border-radius:11px;font-size:13.5px;font-weight:700;border:none;cursor:pointer;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .authbtn.primary{background:var(--accent);color:#fff;}
+  .authbtn.secondary{background:var(--card);color:var(--ink);border:1px solid var(--border);}
+  .authdivider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--ink-faint);font-size:11.5px;}
+  .authdivider::before,.authdivider::after{content:'';flex:1;height:1px;background:var(--border);}
+  .authfoot{font-size:11px;color:var(--ink-faint);margin-top:18px;line-height:1.6;text-align:center;}
+  .authbadge{display:flex;align-items:center;justify-content:center;gap:6px;font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-softer);padding:6px 12px;border-radius:999px;margin-top:14px;width:fit-content;margin-left:auto;margin-right:auto;}
+
+  /* onboarding wizard */
+  .wizprog{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:24px;}
+  .wizdot{width:8px;height:8px;border-radius:50%;background:var(--border);}
+  .wizdot.on{background:var(--accent);width:22px;border-radius:99px;}
+  .invrow{display:flex;gap:8px;margin-bottom:14px;}
+  .invrow input{flex:1;border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:13.5px;background:var(--bg);}
+  .invaddbtn{background:var(--accent-soft);color:var(--accent-dark);border:none;padding:0 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;}
+  .invitedlist{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+  .invitedrow{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:12.5px;}
+  .invitedrow .iav{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .invitedrow .irole{margin-left:auto;font-size:11px;color:var(--ink-faint);}
+  .invitedrow .ipending{font-size:10px;font-weight:700;color:var(--warn);background:var(--warn-soft);padding:2px 8px;border-radius:999px;}
+  .skiprow{text-align:center;font-size:12px;color:var(--ink-faint);margin-top:10px;cursor:pointer;}
+  .wizbtnrow{display:flex;gap:10px;margin-top:6px;}
+  .wizbtnrow .authbtn{margin-bottom:0;}
+
+  /* ===== APP SHELL ===== */
+  #appView{display:none;}
+  #appView.active{display:block;}
+  .shell{display:grid;grid-template-columns:64px 220px 1fr 280px;height:100vh;}
+
+  .rail{background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:8px;}
+  .rail .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;margin-bottom:12px;}
+  .rail .ri{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:16px;cursor:pointer;}
+  .rail .ri:hover{background:var(--border-soft);}
+  .rail .ri.active{background:var(--accent-soft);color:var(--accent);}
+
+  .navcol{background:var(--card);border-right:1px solid var(--border);padding:18px 14px;overflow-y:auto;}
+  .navcol .brand{font-weight:800;font-size:15px;margin-bottom:2px;}
+  .navcol .brandsub{font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:18px;}
+  .navitem{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13.5px;color:var(--ink-soft);cursor:pointer;margin-bottom:2px;}
+  .navitem:hover{background:var(--border-soft);}
+  .navitem.active{background:var(--accent-soft);color:var(--accent-dark);font-weight:700;}
+  .navitem .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:auto;}
+  .navsec{font-size:10.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.05em;padding:16px 10px 6px;}
+  .threaditem{padding:9px 10px;border-radius:9px;font-size:13px;cursor:pointer;margin-bottom:2px;}
+  .threaditem:hover{background:var(--border-soft);}
+  .threaditem.active{background:var(--accent-soft);color:var(--accent-dark);font-weight:700;}
+  .threaditem .tag{display:block;font-size:11px;color:var(--ink-faint);font-weight:400;margin-top:1px;}
+  .vaultchip{margin-top:24px;background:var(--verified-soft);border:1px solid #D7EBDD;border-radius:10px;padding:10px 12px;font-size:11px;color:var(--verified);}
+  .vaultchip .vc-net{display:flex;align-items:center;gap:6px;font-weight:700;}
+  .vaultchip .vc-dot{width:7px;height:7px;border-radius:50%;background:var(--verified);}
+
+  .main{display:flex;flex-direction:column;overflow:hidden;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--card);}
+  .topbar h2{font-size:16px;font-weight:700;}
+  .topbar .sub{font-size:12px;color:var(--ink-soft);}
+  .topmeta{display:flex;align-items:center;gap:16px;font-size:12.5px;color:var(--ink-soft);}
+  .feepill{display:flex;align-items:center;gap:5px;font-weight:700;color:var(--accent);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+  .viewpane{display:none;flex:1;overflow-y:auto;}
+  .viewpane.active{display:flex;flex-direction:column;}
+
+  .threadbody{flex:1;overflow-y:auto;padding:24px;}
+  .threadinner{max-width:720px;}
+  .tmsg{display:flex;gap:12px;margin-bottom:16px;}
+  .tmsg .av{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;}
+  .tmsg.human .av{background:#3A3530;}
+  .tmsg.agent .av{background:linear-gradient(135deg,var(--accent),var(--accent-dark));}
+  .tmsg .who{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .rolechip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--border-soft);color:var(--ink-soft);}
+  .rolechip.agent{background:var(--accent-soft);color:var(--accent-dark);}
+  .tmsg .time{font-size:11px;color:var(--ink-faint);font-weight:400;}
+  .tmsg .body{font-size:13.5px;line-height:1.6;color:#333;}
+
+  .execcard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-top:8px;max-width:500px;}
+  .execline{font-size:12.5px;font-family:"SF Mono",Menlo,monospace;color:var(--verified);padding:3px 0;}
+  .execbar{height:6px;background:var(--border-soft);border-radius:99px;overflow:hidden;margin-top:12px;}
+  .execbar .f{height:100%;background:var(--accent);border-radius:99px;}
+  .execfoot{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);margin-top:6px;font-weight:600;}
+
+  .blockcard{background:var(--warn-soft);border:1px solid #F0DBB0;border-radius:14px;padding:16px 18px;margin-top:8px;max-width:520px;}
+  .blockcard .bt{font-size:13px;font-weight:700;color:#8A5A0F;margin-bottom:12px;}
+  .propbox{background:#fff;border:1px solid #F0DBB0;border-radius:11px;padding:14px;}
+  .proprow{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;}
+  .proprow .lbl{color:var(--ink-faint);text-transform:uppercase;font-size:10px;font-weight:700;letter-spacing:0.03em;}
+  .proprow .val{font-weight:700;}
+  .signbtn{width:100%;background:var(--accent);color:#fff;border:none;padding:11px;border-radius:9px;font-size:13.5px;font-weight:700;margin-top:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .sigrow{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);margin-top:8px;font-family:"SF Mono",Menlo,monospace;}
+
+  .donecard{background:var(--verified-soft);border:1px solid #C9E6D2;border-radius:14px;padding:16px 18px;margin-top:8px;max-width:520px;}
+  .donecard .dt{font-size:13px;font-weight:700;color:#2E6E47;display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .donegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11.5px;}
+  .donegrid .lbl{color:var(--ink-faint);text-transform:uppercase;font-size:9.5px;font-weight:700;}
+  .donegrid .val{font-weight:700;font-family:"SF Mono",Menlo,monospace;}
+  .donenote{font-size:11.5px;color:#2E6E47;margin-top:12px;padding-top:10px;border-top:1px solid #C9E6D2;}
+
+  .composer{padding:14px 24px 20px;border-top:1px solid var(--border);background:var(--card);}
+  .cbox{max-width:720px;border:1px solid var(--border);border-radius:14px;padding:11px 15px;display:flex;gap:8px;align-items:center;background:var(--bg);}
+  .cbox input{flex:1;border:none;background:transparent;outline:none;font-size:13.5px;}
+  .cbox button{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;}
+
+  .rightpanel{background:var(--card);border-left:1px solid var(--border);padding:20px 16px;overflow-y:auto;}
+  .rp-title{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;}
+  .agentcard{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:20px;}
+  .agentcard .an{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px;}
+  .agentcard .an .dot{width:7px;height:7px;border-radius:50%;background:var(--verified);}
+  .agentcard .as{font-size:11px;color:var(--ink-soft);margin-top:3px;}
+  .audititem{border-bottom:1px solid var(--border-soft);padding:10px 0;font-size:11.5px;}
+  .audititem .at{color:var(--verified);font-weight:700;}
+  .audititem .as{color:var(--ink-soft);margin-top:2px;}
+  .audititem .ts{color:var(--ink-faint);font-size:10.5px;float:right;}
+  .emptynote{font-size:11.5px;color:var(--ink-faint);border:1px dashed var(--border);border-radius:10px;padding:14px;text-align:center;}
+
+  .pagewrap{padding:28px 32px;max-width:920px;}
+  .fieldcard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
+  .fieldlabel{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+  .fieldinput{width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;margin-bottom:18px;background:var(--bg);}
+  .selectlike{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:13.5px;margin-bottom:18px;cursor:pointer;}
+  .radiogroup{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+  .radioitem{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:13.5px;cursor:pointer;}
+  .radioitem.on{border-color:var(--accent);background:var(--accent-softer);}
+  .radioitem .rdot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;}
+  .radioitem.on .rdot{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px #fff;}
+  .deploybtn{width:100%;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;}
+
+  .infobanner{display:flex;gap:12px;background:var(--accent-softer);border:1px solid #F3D9CB;border-radius:14px;padding:16px 18px;margin-bottom:20px;font-size:13px;color:#6B4433;line-height:1.5;}
+
+  .ptable{width:100%;border-collapse:collapse;}
+  .ptable th{text-align:left;font-size:10.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.03em;padding:10px 12px;border-bottom:1px solid var(--border);}
+  .ptable td{padding:13px 12px;border-bottom:1px solid var(--border-soft);font-size:13px;}
+  .statuschip{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--verified-soft);color:var(--verified);}
+
+  .progresstop{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .progresstop .pt-lbl{font-size:13.5px;font-weight:700;color:var(--accent);}
+  .progresstop .pt-pct{font-size:12.5px;color:var(--ink-soft);}
+  .bigbar{height:6px;background:var(--border-soft);border-radius:99px;overflow:hidden;margin-bottom:24px;}
+  .bigbar .f{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));}
+  .sourcecard{display:flex;align-items:center;gap:14px;border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+  .sourcecard.on{border-color:#D7C4B3;background:var(--accent-softer);}
+  .sourceicon{width:38px;height:38px;border-radius:10px;background:var(--border-soft);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .sourcename{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .sourcedesc{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .conn-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .conn-badge.on{background:var(--verified-soft);color:var(--verified);}
+  .conn-badge.off{background:var(--border-soft);color:var(--ink-faint);}
+  .toggle{width:38px;height:22px;border-radius:99px;background:var(--border);position:relative;cursor:pointer;flex-shrink:0;margin-left:auto;}
+  .toggle.on{background:var(--accent);}
+  .toggle .kn{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+  .toggle.on .kn{left:18px;}
+
+  .balancecard{background:linear-gradient(135deg,var(--accent-softer),#fff);border:1px solid var(--border);border-radius:18px;padding:26px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  .balancecard .bl{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;margin-bottom:6px;}
+  .balancecard .bv{font-size:34px;font-weight:800;}
+  .balancecard .bs{font-size:13px;color:var(--ink-soft);}
+  .walletbtns{display:flex;gap:10px;}
+  .wbtn{padding:10px 20px;border-radius:10px;font-size:13.5px;font-weight:700;border:none;cursor:pointer;}
+  .wbtn.dark{background:var(--ink);color:#fff;}
+  .wbtn.accent{background:var(--accent);color:#fff;}
+  .tokrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-soft);}
+  .tokic{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+  .tokname{font-size:13.5px;font-weight:700;}
+  .toksub{font-size:11.5px;color:var(--ink-faint);}
+  .tokval{margin-left:auto;text-align:right;}
+  .signerrow{display:flex;align-items:center;gap:10px;padding:10px 0;}
+  .signerrow .av2{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .signerrole{font-size:10.5px;color:var(--ink-faint);}
+  .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(28,26,23,0.4);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-overlay.active{display:flex;}
+  .modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:440px;box-shadow:0 30px 80px rgba(0,0,0,0.2);position:relative;}
+  .modal h3{font-size:17px;font-weight:700;text-align:center;margin-bottom:4px;}
+  .modal .msub{font-size:12.5px;color:var(--ink-soft);text-align:center;margin-bottom:20px;}
+  .modal .mrow{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;}
+  .modal .mrow .lbl{color:var(--ink-faint);text-transform:uppercase;font-size:10px;font-weight:700;}
+  .reasonbox{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:14px 0;}
+  .sig-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:12.5px;border-bottom:1px solid var(--border-soft);}
+  .sig-item:last-child{border-bottom:none;}
+  .sigok{color:var(--verified);font-weight:700;font-size:11.5px;}
+  .sigpending{color:var(--ink-faint);font-weight:700;font-size:11.5px;}
+  .closebtn{position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;color:var(--ink-faint);cursor:pointer;}
+
+  .mobiletop{display:none;}
+
+  /* ===== HOME / COLD START ===== */
+  .homewrap{padding:0 32px;max-width:1200px;margin:0 auto;width:100%;}
+  .homehero{text-align:center;padding:56px 0 32px;}
+  .homehero .hicon{font-size:26px;display:inline-block;margin-right:8px;}
+  .homehero h1{font-size:28px;font-weight:700;display:inline-block;}
+  .homehero p{font-size:14px;color:var(--ink-soft);margin-top:8px;}
+  .homeinputbox{border:1px solid var(--border);border-radius:18px;padding:20px 22px 14px;background:var(--card);box-shadow:0 8px 30px rgba(204,120,92,0.06);margin-bottom:36px;}
+  .homeinput{width:100%;border:none;outline:none;font-size:15px;background:transparent;padding-bottom:16px;}
+  .homeinput::placeholder{color:var(--ink-faint);}
+  .hometoolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border-soft);padding-top:12px;}
+  .htbtn{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--bg);border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;}
+  .htbtn.review{background:var(--accent-soft);color:var(--accent-dark);border-color:transparent;}
+  .htsend{margin-left:auto;width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:15px;}
+  .htsend:disabled{opacity:0.4;cursor:default;}
+
+  .homegrid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;padding-bottom:40px;}
+  .attn-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+  .attn-head{display:flex;align-items:center;gap:8px;padding:16px 18px;border-bottom:1px solid var(--border-soft);font-size:14px;font-weight:700;}
+  .attn-head .cnt{background:var(--border-soft);color:var(--ink-soft);font-size:11.5px;padding:2px 9px;border-radius:999px;}
+  .attn-item{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border-soft);cursor:pointer;}
+  .attn-item:last-child{border-bottom:none;}
+  .attn-item:hover{background:var(--accent-softer);}
+  .attn-ic{width:30px;height:30px;border-radius:9px;background:var(--warn-soft);color:var(--warn);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px;}
+  .attn-title{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .attn-status{font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-family:"SF Mono",Menlo,monospace;}
+  .riskchip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--warn-soft);color:var(--warn);}
+
+  .agent-card2{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+  .agent-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border-soft);}
+  .agent-head .t{font-size:14px;font-weight:700;}
+  .agent-head .cnt{background:var(--border-soft);color:var(--ink-soft);font-size:11.5px;padding:2px 9px;border-radius:999px;margin-left:8px;}
+  .agent-head a{font-size:12px;color:var(--accent);font-weight:600;cursor:pointer;}
+  .agent-row2{display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border-soft);}
+  .agent-row2:last-child{border-bottom:none;}
+  .agent-ic2{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .agent-name2{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px;}
+  .activechip{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--verified-soft);color:var(--verified);}
+  .agent-desc2{font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
+
+  .homebreadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);}
+  .homebreadcrumb b{color:var(--ink);}
+  .toprighticons{display:flex;align-items:center;gap:16px;}
+  .tri{position:relative;font-size:15px;color:var(--ink-faint);cursor:pointer;}
+  .tribadge{position:absolute;top:-7px;right:-9px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+
+  @media (max-width: 900px){ .homegrid{grid-template-columns:1fr;} }
+
+  @media (max-width: 1080px){
+    .shell{grid-template-columns:60px 200px 1fr;}
+    .rightpanel{position:fixed;right:0;top:0;bottom:0;width:280px;transform:translateX(100%);transition:transform .25s ease;z-index:40;box-shadow:-10px 0 30px rgba(0,0,0,0.08);}
+    .rightpanel.open{transform:translateX(0);}
+  }
+  @media (max-width: 820px){
+    .shell{grid-template-columns:1fr;height:auto;min-height:100vh;}
+    .rail{display:none;}
+    .navcol{position:fixed;left:0;top:56px;bottom:0;width:240px;transform:translateX(-100%);transition:transform .25s ease;z-index:40;box-shadow:10px 0 30px rgba(0,0,0,0.08);}
+    .navcol.open{transform:translateX(0);}
+    .mobiletop{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30;}
+    .mobiletop .brand{font-weight:800;font-size:15px;}
+    .mobiletop .icons{display:flex;gap:14px;font-size:18px;}
+    .main{min-height:calc(100vh - 56px);}
+    .pagewrap{padding:20px 16px;}
+    .grid2{grid-template-columns:1fr;}
+    .donegrid{grid-template-columns:1fr 1fr;}
+    .balancecard{flex-direction:column;align-items:flex-start;}
+  }
+  @media (max-width: 480px){
+    .threadbody{padding:16px;}
+    .execcard,.blockcard,.donecard{max-width:100%;}
+    .fieldcard{padding:18px;}
+    .authbox{padding:28px 22px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH + ONBOARDING ===================== -->
+<div id="authView">
+
+  <!-- STAGE 1: Sign up / Sign in -->
+  <div class="authstage active" id="auth-1">
+    <div class="authbox">
+      <div class="authmark">O</div>
+      <h1>Welcome to Onforce</h1>
+      <div class="sub">Multiplayer AI workspace</div>
+
+      <div class="authtabs">
+        <div class="authtab active" onclick="setAuthTab('signup', this)">Sign up</div>
+        <div class="authtab" onclick="setAuthTab('signin', this)">Sign in</div>
+      </div>
+
+      <div id="signupFields">
+        <div class="fieldsm"><label>Full name</label><input placeholder="Alex Rivera"></div>
+        <div class="fieldsm"><label>Work email</label><input placeholder="alex@company.com"></div>
+      </div>
+      <div id="signinFields" style="display:none;">
+        <div class="fieldsm"><label>Work email</label><input placeholder="alex@company.com"></div>
+      </div>
+
+      <button class="authbtn primary" onclick="goAuth(2)" id="authPrimaryBtn">🔒 Continue with Passkey</button>
+      <button class="authbtn secondary" onclick="goAuth(2)">Continue with Google</button>
+
+      <div class="authfoot">Signing up creates a secure, non-custodial smart account connected to your team's approval workspace. No separate wallet to manage.</div>
+      <div class="authbadge">🛡 Secured by Solana</div>
+    </div>
+  </div>
+
+  <!-- STAGE 2: Create workspace -->
+  <div class="authstage" id="auth-2">
+    <div class="authbox">
+      <div class="wizprog"><span class="wizdot on"></span><span class="wizdot"></span><span class="wizdot"></span></div>
+      <h1>Name your workspace</h1>
+      <div class="sub">You can invite your team and connect tools next.</div>
+      <div class="fieldsm"><label>Workspace name</label><input placeholder="Finance Team" value="Finance Team"></div>
+      <div class="fieldsm"><label>Workspace URL</label><input placeholder="onforce.app/finance-team" value="onforce.app/finance-team"></div>
+      <button class="authbtn primary" onclick="goAuth(3)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STAGE 3: Invite team members -->
+  <div class="authstage" id="auth-3">
+    <div class="authbox">
+      <div class="wizprog"><span class="wizdot on"></span><span class="wizdot on"></span><span class="wizdot"></span></div>
+      <h1>Invite your team</h1>
+      <div class="sub">Anyone you invite can see the same threads and approve actions alongside you.</div>
+
+      <div class="invrow">
+        <input placeholder="Email address" id="inviteInput" value="maria@company.com">
+        <button class="invaddbtn" onclick="addInvite()">Invite</button>
+      </div>
+
+      <div class="invitedlist" id="invitedList">
+        <div class="invitedrow"><div class="iav">A</div> Alex Rivera (you) <span class="irole">Lead Operator</span></div>
+      </div>
+
+      <div class="wizbtnrow">
+        <button class="authbtn secondary" onclick="goAuth(2)">← Back</button>
+        <button class="authbtn primary" onclick="goAuth(4)">Continue →</button>
+      </div>
+      <div class="skiprow" onclick="goAuth(4)">Skip for now, invite later</div>
+    </div>
+  </div>
+
+  <!-- STAGE 4: Set approval rule, then enter app -->
+  <div class="authstage" id="auth-4">
+    <div class="authbox">
+      <div class="wizprog"><span class="wizdot on"></span><span class="wizdot on"></span><span class="wizdot on"></span></div>
+      <h1>Decide who needs to agree</h1>
+      <div class="sub">Before anything high-stakes happens, this many people have to say yes.</div>
+      <div class="fieldcard" style="padding:16px 18px;margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;">High-stakes actions in Finance</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+          Payments, contracts, vendor replies
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button style="width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;">−</button>
+            <b>2</b> of <b>3</b>
+            <button style="width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="wizbtnrow">
+        <button class="authbtn secondary" onclick="goAuth(3)">← Back</button>
+        <button class="authbtn primary" onclick="enterApp()">Finish setup →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="appView">
+  <div class="mobiletop">
+    <div class="icons"><span onclick="toggleNav()">☰</span></div>
+    <div class="brand">Onforce</div>
+    <div class="icons"><span onclick="toggleRight()">◈</span></div>
+  </div>
+
+  <div class="shell">
+
+    <div class="rail">
+      <div class="mark">O</div>
+      <div class="ri active" data-p="home" onclick="showPage('home',this)">⌂</div>
+      <div class="ri" data-p="threads" onclick="showPage('threads',this)">💬</div>
+      <div class="ri" data-p="policy" onclick="showPage('policy',this)">🛡</div>
+      <div class="ri" data-p="knowledge" onclick="showPage('knowledge',this)">📚</div>
+      <div class="ri" data-p="wallet" onclick="showPage('wallet',this)">💰</div>
+    </div>
+
+    <div class="navcol" id="navcol">
+      <div class="brand">Onforce</div>
+      <div class="brandsub">Multiplayer AI</div>
+
+      <div class="navitem active" data-p="home" onclick="showPage('home',this)">⌂ Workspace Home</div>
+      <div class="navitem" data-p="threads" onclick="showPage('threads',this)">💬 Multiplayer Threads <span class="dot"></span></div>
+      <div class="navitem" data-p="policy" onclick="showPage('policy',this)">🛡 Policy &amp; Multisig</div>
+      <div class="navitem" data-p="knowledge" onclick="showPage('knowledge',this)">📚 Knowledge Ingestion</div>
+      <div class="navitem" data-p="wallet" onclick="showPage('wallet',this)">💰 Wallet &amp; Vaults</div>
+
+      <div class="navsec">Channels &amp; Threads</div>
+      <div class="threaditem active">Q3 Vendor Settlement<span class="tag">Finance</span></div>
+      <div class="threaditem">NDA Draft &amp; Execution<span class="tag">Legal</span></div>
+      <div class="threaditem">AWS Cloud Cost Optimizer<span class="tag">Infra</span></div>
+
+      <div class="vaultchip">
+        <div class="vc-net"><span class="vc-dot"></span> Solana Mainnet</div>
+        <div style="margin-top:2px;">SquadsV4: Sq1...7Fv</div>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <div class="viewpane active" id="page-home">
+        <div class="topbar">
+          <div class="homebreadcrumb"><span>Finance</span> <span>›</span> <b>Workspace Home</b></div>
+          <div class="toprighticons">
+            <span class="tri">◈<span class="tribadge">3</span></span>
+            <span class="tri">🛡<span class="tribadge">5</span></span>
+            <span class="tri" onclick="showPage('policy', document.querySelector('[data-p=policy]'))">⚙</span>
+            <span class="tri" onclick="showPage('knowledge', document.querySelector('[data-p=knowledge]'))">📚</span>
+            <span class="tri" onclick="showPage('wallet', document.querySelector('[data-p=wallet]'))">💰</span>
+            <div class="avatar">A</div>
+          </div>
+        </div>
+
+        <div class="threadbody">
+          <div class="homewrap">
+
+            <div class="homehero">
+              <span class="hicon">✦</span><h1>What should we tackle today?</h1>
+              <p>Describe a task or question and your agent will plan the next steps.</p>
+            </div>
+
+            <div class="homeinputbox">
+              <input class="homeinput" id="homeInput" placeholder="Message General Workstream..." onkeydown="if(event.key==='Enter')startFromHome()">
+              <div class="hometoolbar">
+                <div class="htbtn">+ General Workstream ⌄</div>
+                <div class="htbtn review">🛡 Auto-review ⌄</div>
+                <div class="htbtn" style="margin-left:auto;margin-right:0;">Fast Drafting Model ⌄</div>
+                <button class="htsend" onclick="startFromHome()">↑</button>
+              </div>
+            </div>
+
+            <div class="homegrid">
+              <div class="attn-card">
+                <div class="attn-head">⚠ Needs Attention <span class="cnt">14</span></div>
+
+                <div class="attn-item" onclick="showPage('threads', document.querySelector('[data-p=threads]'))">
+                  <div class="attn-ic">🛡</div>
+                  <div><div class="attn-title">Vendor Renewal Risk Review <span class="riskchip">Medium Risk</span></div><div class="attn-status">approval_required — waiting for approval</div></div>
+                </div>
+                <div class="attn-item" onclick="showPage('threads', document.querySelector('[data-p=threads]'))">
+                  <div class="attn-ic">🛡</div>
+                  <div><div class="attn-title">Expense Report Q1 Audit <span class="riskchip">Medium Risk</span></div><div class="attn-status">approval_required — waiting for approval</div></div>
+                </div>
+                <div class="attn-item" onclick="showPage('threads', document.querySelector('[data-p=threads]'))">
+                  <div class="attn-ic">🛡</div>
+                  <div><div class="attn-title">Invoice Anomaly Review <span class="riskchip">Medium Risk</span></div><div class="attn-status">approval_required — waiting for approval</div></div>
+                </div>
+                <div class="attn-item">
+                  <div class="attn-ic" style="background:var(--border-soft);color:var(--ink-faint);">⏱</div>
+                  <div><div class="attn-title">Quarterly Tax Filing Draft</div><div class="attn-status">user_hold — waiting on user</div></div>
+                </div>
+                <div class="attn-item">
+                  <div class="attn-ic">🛡</div>
+                  <div><div class="attn-title">Payroll Variance Check <span class="riskchip">Medium Risk</span></div><div class="attn-status">approval_required — waiting for approval</div></div>
+                </div>
+              </div>
+
+              <div class="agent-card2">
+                <div class="agent-head"><div class="t">Agents <span class="cnt">10</span></div><a>View Agents</a></div>
+                <div class="agent-row2">
+                  <div class="agent-ic2">🤖</div>
+                  <div><div class="agent-name2">Finance Reviewer <span class="activechip">Active</span></div><div class="agent-desc2">Audits expense reports, matches receipts, flags policy anomalies.</div></div>
+                </div>
+                <div class="agent-row2">
+                  <div class="agent-ic2">🤖</div>
+                  <div><div class="agent-name2">Tax Estimator <span class="activechip">Active</span></div><div class="agent-desc2">Estimates quarterly taxes, prepares projections and deduction rules.</div></div>
+                </div>
+                <div class="agent-row2">
+                  <div class="agent-ic2">🤖</div>
+                  <div><div class="agent-name2">Payroll Auditor <span class="activechip">Active</span></div><div class="agent-desc2">Reconciles payroll runs against contract logs and variance templates.</div></div>
+                </div>
+                <div class="agent-row2">
+                  <div class="agent-ic2">🤖</div>
+                  <div><div class="agent-name2">Ledger Reconciler <span class="activechip">Active</span></div><div class="agent-desc2">Scans general ledger postings for duplicates and matching references.</div></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="viewpane" id="page-threads">
+        <div class="topbar">
+          <div>
+            <h2>Q3 Vendor Settlement — Collaborative Canvas</h2>
+            <div class="sub">A live co-piloting thread where human signatures authorize AI actions</div>
+          </div>
+          <div class="topmeta">
+            <div class="feepill">⚡ $0.00025 tx fee</div>
+            <div class="avatar">A</div>
+          </div>
+        </div>
+
+        <div class="threadbody">
+          <div class="threadinner">
+
+            <div class="tmsg human">
+              <div class="av">A</div>
+              <div>
+                <div class="who">Alex <span class="rolechip">Lead Operator</span> <span class="time">14:24</span></div>
+                <div class="body">Finance Agent, please load the outstanding invoice from Notion wiki under 'Q3 Vendors' and draft a settlement transaction for review.</div>
+              </div>
+            </div>
+
+            <div class="tmsg agent">
+              <div class="av">✦</div>
+              <div>
+                <div class="who">Finance Agent <span class="rolechip agent">Autonomous Worker</span> <span class="time">14:25</span></div>
+                <div class="body">Retrieved Notion file 'Q3_Acme_Invoice_089.pdf'. Found liability of $1,250.00 for Acme Corp. Cross-referencing with approved vendor list.</div>
+                <div class="execcard">
+                  <div class="execline">✓ Retrieving Notion file...</div>
+                  <div class="execline">✓ Extracting invoice details...</div>
+                  <div class="execline">→ Calculating settlement with 3% early-payment discount...</div>
+                  <div class="execbar"><div class="f" style="width:57%"></div></div>
+                  <div class="execfoot"><span>Task 4 of 7 complete</span><span>57%</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tmsg agent">
+              <div class="av">✦</div>
+              <div>
+                <div class="who">Finance Agent <span class="rolechip agent">Autonomous Worker</span> <span class="time">14:26</span></div>
+                <div class="body">⚠️ Action blocked by policy rule P2 — proposed vendor payout of $1,250.00 exceeds the $100.00 auto-approve limit. Proposing a multisig transaction for team review.</div>
+                <div class="blockcard">
+                  <div class="bt">🔶 Multisig Proposal #0047 — Vendor Payout <span style="float:right;">0/3 Signed</span></div>
+                  <div class="propbox">
+                    <div class="proprow"><span class="lbl">Payout destination</span><span class="val">Acme Vault (acme...vXz)</span></div>
+                    <div class="proprow"><span class="lbl">Amount</span><span class="val">$1,250.00</span></div>
+                    <div class="proprow"><span class="lbl">Rule triggered</span><span class="val">P2 · &gt;$100 requires 2-of-3</span></div>
+                    <button class="signbtn" onclick="openModal()">🔒 Sign with FaceID</button>
+                    <div class="sigrow"><span>View on Solana Explorer →</span><span>SqTx_910x...Fa8</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tmsg agent" id="doneMsg" style="display:none;">
+              <div class="av">✦</div>
+              <div>
+                <div class="who">Finance Agent <span class="rolechip agent">Autonomous Worker</span> <span class="time">14:28</span></div>
+                <div class="donecard">
+                  <div class="dt">🟢 Settlement Confirmed &amp; Logged Onchain</div>
+                  <div class="donegrid">
+                    <div><div class="lbl">Transaction hash</div><div class="val">7xK9...mP2q</div></div>
+                    <div><div class="lbl">Execution time</div><div class="val">412ms</div></div>
+                    <div><div class="lbl">Network fee</div><div class="val">$0.00025</div></div>
+                    <div><div class="lbl">Block #</div><div class="val">287,491,033</div></div>
+                  </div>
+                  <div class="donenote">Immutable audit trail recorded. All signers verified via biometric passkey.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="cbox">
+            <input placeholder="Prompt your autonomous team or coordinate actions...">
+            <button>↑</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewpane" id="page-policy">
+        <div class="topbar">
+          <div><h2>Policy &amp; Multisig Governance</h2><div class="sub">Enforce programmatic spending &amp; action thresholds for autonomous loops</div></div>
+          <div class="avatar">A</div>
+        </div>
+        <div class="pagewrap">
+          <div class="grid2">
+            <div>
+              <div class="fieldcard">
+                <div class="fieldlabel">Select autonomous worker</div>
+                <div class="selectlike">Finance Agent <span>⌄</span></div>
+                <div class="fieldlabel">Transaction threshold (USD)</div>
+                <input class="fieldinput" value="$ 100.00">
+                <div class="fieldlabel">Required authorization method</div>
+                <div class="radiogroup">
+                  <div class="radioitem on"><div class="rdot"></div>2-of-3 Multisig Sign-off</div>
+                  <div class="radioitem"><div class="rdot"></div>Auto-Approve loops</div>
+                </div>
+                <button class="deploybtn">Deploy Rule to Vault</button>
+              </div>
+            </div>
+            <div>
+              <div class="infobanner">🔒 Programmatic consensus powered by <b>Squads V4 Multisig</b>. High-stakes agent proposals compile into verifiable transactions waiting for biometric signatures.</div>
+              <div class="fieldcard" style="padding:0;overflow:hidden;">
+                <table class="ptable">
+                  <tr><th>Worker</th><th>Threshold</th><th>Auth</th></tr>
+                  <tr><td>Finance Agent</td><td>&lt; $100</td><td><span class="statuschip">Auto-Approve</span></td></tr>
+                  <tr><td>Finance Agent</td><td>≥ $100</td><td><span class="statuschip">2-of-3</span></td></tr>
+                  <tr><td>Legal Agent</td><td>Any document</td><td><span class="statuschip">1 Approver</span></td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewpane" id="page-knowledge">
+        <div class="topbar">
+          <div><h2>Connect Knowledge Sources</h2><div class="sub">Equip your autonomous squad with unified memory</div></div>
+          <div class="avatar">A</div>
+        </div>
+        <div class="pagewrap">
+          <div class="progresstop"><span class="pt-lbl">Memory &amp; Ingestion Configuration</span><span class="pt-pct">66% Complete</span></div>
+          <div class="bigbar"><div class="f" style="width:66%"></div></div>
+
+          <div class="sourcecard on">
+            <div class="sourceicon">📘</div>
+            <div><div class="sourcename">Notion <span class="conn-badge on">Connected</span></div><div class="sourcedesc">Ingest company wiki, roadmap docs, and guidelines into agent memory.</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"><div class="kn"></div></div>
+          </div>
+          <div class="sourcecard on">
+            <div class="sourceicon">💬</div>
+            <div><div class="sourcename">Slack <span class="conn-badge on">Connected</span></div><div class="sourcedesc">Listen on specific team channels and broadcast task updates.</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"><div class="kn"></div></div>
+          </div>
+          <div class="sourcecard">
+            <div class="sourceicon">🐙</div>
+            <div><div class="sourcename">GitHub <span class="conn-badge off">Disconnected</span></div><div class="sourcedesc">Grant read access to track pull requests and review cycles.</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"><div class="kn"></div></div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;flex-wrap:wrap;gap:12px;">
+            <div style="font-size:11.5px;color:var(--ink-faint);">🔒 All ingested data is cryptographically isolated per workspace.</div>
+            <button class="wbtn accent">Save changes</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewpane" id="page-wallet">
+        <div class="topbar">
+          <div><h2>Vault Management Hub</h2><div class="sub">Secure consensus powered by Solana multi-signature infrastructure</div></div>
+          <div class="avatar">A</div>
+        </div>
+        <div class="pagewrap">
+          <div class="balancecard">
+            <div>
+              <div class="bl">Onforce Operations Vault</div>
+              <div class="bv">$47,832.50</div>
+              <div class="bs">≈ 312.4 SOL · 2-of-3 Multisig Active</div>
+            </div>
+            <div class="walletbtns">
+              <button class="wbtn dark">Deposit</button>
+              <button class="wbtn accent">Send</button>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="fieldcard">
+              <div class="fieldlabel">Token Balances</div>
+              <div class="tokrow"><div class="tokic">◎</div><div><div class="tokname">Solana</div><div class="toksub">SOL</div></div><div class="tokval"><div class="tokname">312.4</div><div class="toksub">$47,200.00</div></div></div>
+              <div class="tokrow"><div class="tokic">$</div><div><div class="tokname">USD Coin</div><div class="toksub">USDC</div></div><div class="tokval"><div class="tokname">632.50</div><div class="toksub">$632.50</div></div></div>
+            </div>
+            <div class="fieldcard">
+              <div class="fieldlabel">Vault Permissions · 2 of 3 required</div>
+              <div class="signerrow"><div class="av2">A</div><div><div class="tokname" style="font-size:12.5px;">Alex.sol</div><div class="signerrole">Lead Operator</div></div></div>
+              <div class="signerrow"><div class="av2">M</div><div><div class="tokname" style="font-size:12.5px;">Maria.sol</div><div class="signerrole">Finance Approver</div></div></div>
+              <div class="signerrow"><div class="av2">J</div><div><div class="tokname" style="font-size:12.5px;">Jake.sol</div><div class="signerrole">Legal Approver</div></div></div>
+            </div>
+          </div>
+
+          <div class="fieldcard" style="margin-top:20px;padding:0;overflow:hidden;">
+            <div style="padding:18px 24px 0;"><div class="fieldlabel" style="margin-bottom:14px;">Recent Transactions</div></div>
+            <table class="ptable">
+              <tr><th>Description</th><th>Amount</th><th>Date</th><th></th></tr>
+              <tr><td>Vendor Payout — Acme Corp</td><td>-$1,250.00</td><td>Aug 15, 2026</td><td><span class="statuschip">Completed</span></td></tr>
+              <tr><td>Deposit — SOL Transfer</td><td>+50.0 SOL</td><td>Aug 14, 2026</td><td><span class="statuschip">Completed</span></td></tr>
+              <tr><td>Vendor Payout — CloudHost Inc</td><td>-$890.00</td><td>Aug 12, 2026</td><td><span class="statuschip">Completed</span></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="rightpanel" id="rightpanel">
+      <div class="rp-title">Active Squad Agents</div>
+      <div class="agentcard">
+        <div class="an"><span class="dot"></span> Finance Agent v1.0</div>
+        <div class="as">Executing background loop</div>
+      </div>
+
+      <div class="rp-title">Multisig Audit History</div>
+      <div id="auditEmpty" class="emptynote">No transactions executed in this thread yet. Pending trigger...</div>
+      <div id="auditFilled" style="display:none;">
+        <div class="audititem"><span class="ts">Just now</span><div class="at">✓ Tx_0047 Executed</div><div class="as">Acme Vendor Settlement of $1,250.00 completed onchain.</div></div>
+        <div class="audititem"><span class="ts">1h ago</span><div class="at">Tx_0428 Executed</div><div class="as">Payout of $75.00 to AWS. Safe bounds auto-passed.</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="closebtn" onclick="closeModal()">✕</button>
+    <h3>Multisig Authorization</h3>
+    <div class="msub">Authorize execution of proposal #0047</div>
+
+    <div class="mrow"><span class="lbl">Proposal action</span><b>Vendor Payout ($1,250.00)</b></div>
+    <div class="mrow"><span class="lbl">Recipient</span><b>Acme Corp (acme...vXz)</b></div>
+
+    <div class="reasonbox">
+      <b style="display:block;margin-bottom:4px;color:var(--ink);">Agent resolution reasoning</b>
+      Invoice validated against Notion contract records. Applied 3% early-payment discount. Acme Corp holds an active "Whitelisted Vendor" tag.
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;margin-bottom:6px;">Signature status (2/3 required)</div>
+    <div class="sig-item"><span>Alex.sol — Lead Operator</span><span class="sigok">✓ Signed</span></div>
+    <div class="sig-item"><span>Maria.sol — Finance Approver</span><span class="sigpending">⏳ Pending</span></div>
+    <div class="sig-item"><span>Jake.sol — Legal Approver</span><span class="sigpending">⏳ Pending</span></div>
+
+    <button class="signbtn" style="margin-top:16px;" onclick="signNow()">🔒 Sign with FaceID</button>
+  </div>
+</div>
+
+<script>
+  function setAuthTab(tab, el){
+    document.querySelectorAll('.authtab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('signupFields').style.display = tab === 'signup' ? 'block' : 'none';
+    document.getElementById('signinFields').style.display = tab === 'signin' ? 'block' : 'none';
+    document.getElementById('authPrimaryBtn').innerHTML = tab === 'signup' ? '🔒 Continue with Passkey' : '🔒 Sign in with Passkey';
+  }
+  function goAuth(n){
+    document.querySelectorAll('.authstage').forEach(s => s.classList.remove('active'));
+    document.getElementById('auth-' + n).classList.add('active');
+  }
+  let inviteCount = 0;
+  function addInvite(){
+    const inp = document.getElementById('inviteInput');
+    if (!inp.value.trim()) return;
+    inviteCount++;
+    const names = ['Maria Chen','Jake Torres','Dev Patel','Elena Cruz'];
+    const roles = ['Finance Approver','Legal Approver','Finance','Finance lead'];
+    const name = names[(inviteCount-1) % names.length];
+    const role = roles[(inviteCount-1) % roles.length];
+    const initials = name.split(' ').map(w=>w[0]).join('');
+    const row = document.createElement('div');
+    row.className = 'invitedrow';
+    row.innerHTML = '<div class="iav">'+initials+'</div> ' + name + ' <span class="irole">'+role+'</span> <span class="ipending">Invited</span>';
+    document.getElementById('invitedList').appendChild(row);
+    inp.value = '';
+  }
+  function enterApp(){
+    document.getElementById('authView').style.display = 'none';
+    document.getElementById('appView').classList.add('active');
+  }
+  function startFromHome(){
+    const inp = document.getElementById('homeInput');
+    const goal = inp.value.trim() || "Prepare a renewal brief for Northstar and flag anything that needs sign-off.";
+    showPage('threads', document.querySelector('.rail .ri[data-p="threads"]'));
+
+    const chatinner = document.getElementById('chatinner') || document.querySelector('.threadinner');
+    const box = document.createElement('div');
+    box.className = 'tmsg human';
+    box.innerHTML = '<div class="av">A</div><div><div class="who">Alex <span class="rolechip">Lead Operator</span> <span class="time">just now</span></div><div class="body">'+goal+'</div></div>';
+    box.style.marginTop = '18px';
+    box.style.borderTop = '1px solid var(--border)';
+    box.style.paddingTop = '16px';
+    document.querySelector('.threadinner').appendChild(box);
+    box.scrollIntoView({behavior:'smooth'});
+
+    setTimeout(() => {
+      const a = document.createElement('div');
+      a.className = 'tmsg agent';
+      a.innerHTML = '<div class="av">✦</div><div><div class="who">Finance Agent <span class="rolechip agent">Autonomous Worker</span> <span class="time">just now</span></div><div class="body">On it — working here so the team can follow along.</div><div class="execcard"><div class="execline">→ Reading source documents...</div><div class="execbar"><div class="f" style="width:22%"></div></div><div class="execfoot"><span>Task 1 of 4</span><span>22%</span></div></div></div>';
+      document.querySelector('.threadinner').appendChild(a);
+      a.scrollIntoView({behavior:'smooth'});
+    }, 700);
+  }
+  function showPage(id, el){
+    document.querySelectorAll('.viewpane').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('.rail .ri, .navitem[data-p]').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('[data-p="'+id+'"]').forEach(n => n.classList.add('active'));
+    document.getElementById('navcol').classList.remove('open');
+  }
+  function openModal(){ document.getElementById('modalOverlay').classList.add('active'); }
+  function closeModal(){ document.getElementById('modalOverlay').classList.remove('active'); }
+  function signNow(){
+    closeModal();
+    document.getElementById('doneMsg').style.display = 'flex';
+    document.getElementById('auditEmpty').style.display = 'none';
+    document.getElementById('auditFilled').style.display = 'block';
+  }
+  function toggleNav(){ document.getElementById('navcol').classList.toggle('open'); }
+  function toggleRight(){ document.getElementById('rightpanel').classList.toggle('open'); }
+</script>
+
+</body>
+</html>
